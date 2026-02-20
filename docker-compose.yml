@@ -23,7 +23,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: event_db
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - event_pgdata:/var/lib/postgresql/data
     healthcheck:
