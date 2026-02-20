@@ -1,0 +1,327 @@
+{
+  "info": {
+    "name": "Booking Microservice API",
+    "description": "Event Booking Microservice — Event Service (:8081) + Booking Service (:8082)\n\nEvent: \"Golang Workshop Bangkok\"\n- Max: 50 seats\n- Waitlist: 5 seats\n- Price: ฿2,500\n- Open booking 20/2/2026 17:00 - 25/2/2026 17:00",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "event_service_url",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "booking_service_url",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "event_id",
+      "value": "1"
+    },
+    {
+      "key": "booking_id",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Event Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{event_service_url}}/health",
+              "host": ["{{event_service_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Create Event — Golang Workshop Bangkok",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('event_id', jsonData.id);",
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Event name is correct', function () {",
+                  "    pm.expect(jsonData.name).to.eql('Golang Workshop Bangkok');",
+                  "});",
+                  "pm.test('Max seats is 50', function () {",
+                  "    pm.expect(jsonData.max_seats).to.eql(50);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Golang Workshop Bangkok\",\n  \"max_seats\": 50,\n  \"waitlist_limit\": 5,\n  \"price\": 2500,\n  \"booking_start_at\": \"2026-02-20T17:00:00+07:00\",\n  \"booking_end_at\": \"2026-02-25T17:00:00+07:00\"\n}"
+            },
+            "url": {
+              "raw": "{{event_service_url}}/api/v1/events",
+              "host": ["{{event_service_url}}"],
+              "path": ["api", "v1", "events"]
+            }
+          }
+        },
+        {
+          "name": "List Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{event_service_url}}/api/v1/events",
+              "host": ["{{event_service_url}}"],
+              "path": ["api", "v1", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{event_service_url}}/api/v1/events/{{event_id}}",
+              "host": ["{{event_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/health",
+              "host": ["{{booking_service_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Get Event Status (seats available)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/status",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Create Booking — Confirmed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('booking_id', jsonData.id);",
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Booking status is confirmed', function () {",
+                  "    pm.expect(jsonData.status).to.eql('confirmed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user-001\"\n}"
+            },
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/bookings",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Create Booking — Double Booking (expect 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test('Error message mentions already booked', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('already');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user-001\"\n}"
+            },
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/bookings",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "bookings"]
+            },
+            "description": "Same user_id as previous — should be rejected with 409"
+          }
+        },
+        {
+          "name": "Create Booking — Second User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"user-002\"\n}"
+            },
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/bookings",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/bookings/{{booking_id}}",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Bookings for Event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/bookings",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "List Bookings — Filter Confirmed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/bookings?status=confirmed",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "bookings"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "confirmed"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Bookings — Filter Waitlisted",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/events/{{event_id}}/bookings?status=waitlisted",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "events", "{{event_id}}", "bookings"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "waitlisted"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking (+ auto-promote waitlist)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Booking status is cancelled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('cancelled');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{booking_service_url}}/api/v1/bookings/{{booking_id}}",
+              "host": ["{{booking_service_url}}"],
+              "path": ["api", "v1", "bookings", "{{booking_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
