@@ -5,6 +5,7 @@ import (
 
 	"github.com/Eursukkul/booking-microservice/booking-service/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EventRepository interface {
@@ -32,7 +33,7 @@ func (r *eventRepository) FindByID(ctx context.Context, id uint) (*models.Event,
 func (r *eventRepository) FindByIDForUpdate(ctx context.Context, tx *gorm.DB, id uint) (*models.Event, error) {
 	var event models.Event
 	if err := tx.WithContext(ctx).
-		Set("gorm:query_option", "FOR UPDATE").
+		Clauses(clause.Locking{Strength: "UPDATE"}).
 		First(&event, id).Error; err != nil {
 		return nil, err
 	}
