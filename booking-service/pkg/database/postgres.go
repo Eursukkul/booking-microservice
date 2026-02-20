@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"time"
 
 	"github.com/Eursukkul/booking-microservice/booking-service/internal/models"
 	"gorm.io/driver/postgres"
@@ -16,6 +17,15 @@ func NewPostgresDB(dsn string) *gorm.DB {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("failed to get sql.DB: %v", err)
+	}
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(1 * time.Minute)
 
 	if err := db.AutoMigrate(&models.Event{}, &models.Booking{}); err != nil {
 		log.Fatalf("failed to auto-migrate: %v", err)

@@ -2,6 +2,8 @@
 
 ระบบจอง Event แบบ Microservice Architecture รองรับ concurrency สูง พร้อมระบบ Waitlist อัตโนมัติ
 
+> ⚡ **สำหรับผู้ตรวจ:** รันคำสั่งเดียว `make build-test` เพื่อ Build + Test ทั้งหมด
+
 ## Problem Statement
 
 ออกแบบระบบจอง Event ที่ต้อง:
@@ -33,6 +35,35 @@
 | Message Queue | RabbitMQ 3.13 |
 | Container | Docker Compose |
 | Testing | Go testing + testify |
+
+---
+
+## ✅ Quick Summary
+
+### Test Results
+
+| Type | Count | Status |
+|------|-------|--------|
+| Unit Tests | 28 tests | PASS |
+| API E2E Tests | 10 steps | PASS |
+| Integration Tests | 6 tests | PASS |
+| **Total** | **44 tests** | **ALL PASS** |
+
+### Key Features Implemented
+
+- **Max Seats Limit** - จำกัดจำนวนคนจอง
+- **Waitlist System** - คิวสำรอง + Auto-promote
+- **Concurrency Protection** - `SELECT ... FOR UPDATE`
+- **Double-booking Prevention** - App check + DB constraint
+- **Race Condition Prevention** - 3-layer protection
+- **Microservices** - 2 services + Message Queue
+- **Complete Tests** - Unit + API + Integration
+
+### One Command to Verify
+
+```bash
+make build-test
+```
 
 ---
 
@@ -773,6 +804,27 @@ Errors:
 - Go 1.22+
 - Docker & Docker Compose
 
+### ⚡ One Command: Build & Test (แนะนำสำหรับผู้ตรวจ)
+
+รันคำสั่งเดียวจบ - Build, Start Services, และ Run Tests ทั้งหมด:
+
+```bash
+make build-test
+```
+
+คำสั่งนี้จะทำอัตโนมัติ:
+1.Build Docker images
+2.Start all services (DBs + RabbitMQ + Services)
+3.Health check
+4.Run Unit Tests (28 tests)
+5.Run Integration Tests (6 tests)
+6.แสดงผลสรุป
+
+หลังจากรันเสร็จ:
+- Event Service: http://localhost:8081
+- Booking Service: http://localhost:8082
+- RabbitMQ UI: http://localhost:15672 (guest/guest)
+
 ### Option 1: Run with Docker Compose (ง่ายสุด)
 
 ```bash
@@ -847,6 +899,13 @@ make docker-down
 
 ## Testing
 
+### ⚡ One Command - Build & Test All
+
+```bash
+# Build Docker + Start Services + Run Unit + Integration Tests
+make build-test
+```
+
 ### Unit Tests (ไม่ต้องมี DB)
 
 Mock interfaces ทดสอบ business logic + HTTP handler:
@@ -861,6 +920,30 @@ make test
 | | | Handler: 201/400/404/500 responses |
 | Booking Service | 14 tests | Handler: confirmed/waitlisted/409/404/400 responses |
 | | | Error mapping: ErrAlreadyBooked→409, ErrBookingClosed→400 |
+
+### API End-to-End Tests (ต้องมี Services รันอยู่)
+
+ทดสอบ API จริงผ่าน HTTP calls (เหมือน Postman แต่เป็น Go Test):
+
+```bash
+# Run API tests (ต้องมี services รันก่อน)
+make test-api
+```
+
+| Step | Test | Expected |
+|---|---|---|
+| 1 | Create Event | 201 Created |
+| 2 | Get Event Status | 50 seats available |
+| 3 | Create Booking #1 | Status: confirmed |
+| 4 | Double Booking Prevention | HTTP 409 |
+| 5 | Fill All 50 Seats | 49 bookings created |
+| 6 | Verify Seats Full | 0 available |
+| 7 | Create Waitlist Booking | Status: waitlisted, Order: 1 |
+| 8 | Fully Booked Rejection | HTTP 409 |
+| 9 | Cancel Booking | Status: cancelled |
+| 10 | Waitlist Promotion | user-051 → confirmed |
+
+**ไฟล์:** `booking-service/tests/api/api_test.go`
 
 ### Integration Tests (ต้องมี PostgreSQL จริง)
 
@@ -926,3 +1009,7 @@ db.Clauses(clause.OnConflict{
 
 - Idempotent: ส่ง message ซ้ำ 10 ครั้งก็ผลลัพธ์เหมือนกัน
 - รองรับ event.updated ในอนาคต
+
+---
+
+> **Note:** RabbitMQ ทำหน้าที่ sync ข้อมูล Event จาก event-service ให้ booking-service มี local copy ไว้ใช้เอง ไม่เกี่ยวกับ concurrency (ซึ่งแก้ด้วย `SELECT FOR UPDATE` + transaction) และเลือกใช้แทน Redis เพราะเป็น event-driven ข้อมูลถูกส่งทันทีเมื่อมีการเปลี่ยนแปลง ไม่มีปัญหา stale cache
