@@ -2,7 +2,7 @@
 
 ระบบจอง Event แบบ Microservice Architecture รองรับ concurrency สูง พร้อมระบบ Waitlist อัตโนมัติ
 
-> ⚡ **สำหรับผู้ตรวจ:** รันคำสั่งเดียว `make build-test` เพื่อ Build + Test ทั้งหมด
+> รันคำสั่งเดียว `make build-test` เพื่อ Build + Test ทั้งหมด
 
 ## Problem Statement
 
