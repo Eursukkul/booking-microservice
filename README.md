@@ -38,7 +38,7 @@
 
 ---
 
-## ✅ Quick Summary
+##  Quick Summary
 
 ### Test Results
 
