@@ -1012,4 +1012,41 @@ db.Clauses(clause.OnConflict{
 
 ---
 
+## Future Improvements (Next Phase)
+
+แต่ถ้าพัฒนาเป็น production phase ถัดไป แนะนำเพิ่มดังนี้:
+
+### Must-have (เมื่อเริ่มรับเงินจริง)
+
+1. **Payment Service**
+   - แยกสถานะการชำระเงิน: `pending`, `paid`, `failed`, `refunded`
+   - รองรับ webhook จาก payment gateway
+   - มี idempotency key ป้องกันตัดเงินซ้ำ
+   - รองรับ flow คืนเงินเมื่อมีการยกเลิก
+
+2. **API Gateway**
+   - เป็น entrypoint เดียวของ client
+   - จัดการ auth, rate limit, request tracing, routing
+   - ลดภาระ cross-cutting concern ในแต่ละ service
+
+3. **Auth/User Service Integration**
+   - ใช้ user identity จริงแทนการส่ง `user_id` ตรงๆ
+   - รองรับ JWT/OAuth2 และ role-based permission
+
+### Nice-to-have
+
+1. **Notification Service**
+   - แจ้งเตือนเมื่อ booking สำเร็จ/ยกเลิก
+   - แจ้งเตือนเมื่อถูก promote จาก waitlist
+
+2. **Observability Stack**
+   - Centralized logs, metrics, distributed tracing
+   - เพิ่ม dashboard และ alert สำหรับ booking failure / payment failure
+
+3. **Resilience Patterns**
+   - retry + exponential backoff + dead-letter queue
+   - circuit breaker ระหว่าง service ภายนอก (เช่น payment provider)
+
+---
+
 > **Note:** RabbitMQ ทำหน้าที่ sync ข้อมูล Event จาก event-service ให้ booking-service มี local copy ไว้ใช้เอง ไม่เกี่ยวกับ concurrency (ซึ่งแก้ด้วย `SELECT FOR UPDATE` + transaction) และเลือกใช้แทน Redis เพราะเป็น event-driven ข้อมูลถูกส่งทันทีเมื่อมีการเปลี่ยนแปลง ไม่มีปัญหา stale cache
